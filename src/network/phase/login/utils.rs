@@ -76,7 +76,7 @@ pub async fn build_player(
     conn: &mut LoginConnection,
     player: &PlayerBuilder,
 ) -> network::Result<Player> {
-    trace!("Attempting to build player");
+    trace!("Attempting to build player data");
     match player.build() {
         Ok(player) => Ok(player),
         Err(err) => {
