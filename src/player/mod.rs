@@ -1,9 +1,10 @@
+pub mod addr;
 pub mod skin;
 
 #[derive(derive_builder::Builder, Clone, Debug, PartialEq, Eq)]
 pub struct Player {
     // The IP address of the player.
-    pub addr: std::net::SocketAddr,
+    pub addr: addr::PlayerAddr,
     // The username of the player.
     pub name: String,
     // The UUID of the player.

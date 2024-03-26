@@ -26,6 +26,8 @@ pub struct Config {
     pub uses_velocity_modern: bool,
     /// If `uses_velocity_modern` is true, the secret to use for verifying Velocity forwarding
     pub velocity_forwarding_secret: String,
+    /// Whether the player's IP address should be withheld in the console
+    pub hide_player_ips: bool,
 }
 
 impl Config {

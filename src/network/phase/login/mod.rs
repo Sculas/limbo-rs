@@ -6,7 +6,7 @@ use crate::{
     bail_packet_error, config,
     network::{self, ext::ConnectionExt, server::AServer, NextPhase},
     network_disconnect, network_state,
-    player::PlayerBuilder,
+    player::{addr::PlayerAddr, PlayerBuilder},
 };
 
 mod utils;
@@ -21,7 +21,7 @@ network_state! {
 #[tracing::instrument(name = "login", skip_all)]
 pub async fn try_handle(
     mut conn: network::LoginConnection,
-    addr: std::net::SocketAddr,
+    addr: PlayerAddr,
     server: &AServer,
 ) -> network::Result<NextPhase> {
     debug!("Handling login phase");
@@ -76,7 +76,7 @@ pub async fn try_handle(
                     .await?;
 
                     #[rustfmt::skip] // keep it on a single line
-                    player.addr(info.addr).name(info.name).uuid(info.uuid).skin(info.skin);
+                    player.addr(info.addr.into()).name(info.name).uuid(info.uuid).skin(info.skin);
                     let player_data = utils::build_player(&mut conn, &player).await?;
                     utils::signal_login_success(&mut conn, server, player_data).await?;
                     state = State::PhaseSwitch; // wait for login ack before transitioning
@@ -95,5 +95,6 @@ pub async fn try_handle(
         }
     }
 
+    debug!("Transitioning to configuration phase");
     Ok(NextPhase::Configuration(utils::configuration(conn)))
 }

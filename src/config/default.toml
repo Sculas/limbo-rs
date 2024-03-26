@@ -12,3 +12,5 @@ version = "Sculas/limbo-rs"
 uses_velocity_modern = false
 # If `uses_velocity_modern` is true, the secret to use for verifying Velocity forwarding
 velocity_forwarding_secret = "<secret>"
+# Whether the player's IP address should be withheld in the console
+hide_player_ips = false

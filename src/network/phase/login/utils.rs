@@ -92,7 +92,7 @@ pub async fn signal_login_success(
     server: &AServer,
     player: Player,
 ) -> std::io::Result<()> {
-    trace!("Sending login success");
+    trace!("Signaling login success to client");
     server.add_player(player.clone()).await;
     conn.write(
         ClientboundGameProfilePacket {
