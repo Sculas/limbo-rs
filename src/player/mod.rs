@@ -1,17 +1,66 @@
+use crate::network::server::AServer;
+
 pub mod addr;
 pub mod skin;
 
-#[derive(derive_builder::Builder, Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Player {
-    // The IP address of the player.
-    pub addr: addr::PlayerAddr,
-    // The username of the player.
-    pub name: String,
-    // The UUID of the player.
-    pub uuid: uuid::Uuid,
-    // The skin of the player.
-    #[builder(default)]
-    pub skin: Option<skin::PlayerSkin>,
+    // Player Data
+    /// The IP address of the player.
+    addr: addr::PlayerAddr,
+    /// The username of the player.
+    name: String,
+    /// The UUID of the player.
+    uuid: uuid::Uuid,
+    /// The skin of the player.
+    skin: Option<skin::PlayerSkin>,
+    // Entity Data
+    /// The entity ID of the player.
+    entity_id: u64,
+}
+
+impl Player {
+    /// Creates a new player that must be initialized.
+    pub fn new(
+        addr: addr::PlayerAddr,
+        name: String,
+        uuid: uuid::Uuid,
+        skin: Option<skin::PlayerSkin>,
+    ) -> Self {
+        Self {
+            addr,
+            name,
+            uuid,
+            skin,
+            entity_id: 0,
+        }
+    }
+
+    /// Initializes the player.
+    /// Must be called once the player enters the PLAY phase.
+    pub fn init(&mut self, server: &AServer) {
+        self.entity_id = server.next_entity_id();
+    }
+
+    /// Returns the IP address of the player.
+    pub fn addr(&self) -> &addr::PlayerAddr {
+        &self.addr
+    }
+
+    /// Returns the username of the player.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the UUID of the player.
+    pub fn uuid(&self) -> uuid::Uuid {
+        self.uuid
+    }
+
+    /// Returns the skin of the player.
+    pub fn skin(&self) -> Option<&skin::PlayerSkin> {
+        self.skin.as_ref()
+    }
 }
 
 impl std::fmt::Display for Player {

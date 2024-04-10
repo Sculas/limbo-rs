@@ -4,9 +4,13 @@ use tracing::*;
 
 use crate::{
     bail_packet_error, config,
-    network::{self, ext::ConnectionExt, server::AServer},
+    network::{
+        self,
+        ext::ConnectionExt,
+        server::{AServer, PlayerRef},
+    },
     network_disconnect, network_state,
-    player::{addr::PlayerAddr, PlayerBuilder},
+    player::{addr::PlayerAddr, Player},
 };
 
 mod utils;
@@ -23,15 +27,13 @@ pub async fn try_handle(
     mut conn: network::LoginConnection,
     addr: PlayerAddr,
     server: &AServer,
-) -> network::Result<(network::ConfigurationConnection, uuid::Uuid)> {
+) -> network::Result<(network::ConfigurationConnection, PlayerRef)> {
     debug!("Handling login phase");
     let mut state = State::default();
 
     let config = config::get();
     let transaction_id = rand::thread_rng().gen();
-    let mut player_uuid = None;
-    let mut player = PlayerBuilder::default();
-    player.addr(addr); // set player IP address
+    let mut player_lock = None;
 
     loop {
         match conn.read_timeout().await {
@@ -45,11 +47,13 @@ pub async fn try_handle(
                     continue; // await verification from Velocity
                 }
 
-                let offline_uuid = azalea_auth::offline::generate_uuid(&packet.name);
-                player.name(packet.name).uuid(offline_uuid);
-                let player_data = utils::build_player(&mut conn, &player).await?;
-                utils::signal_login_success(&mut conn, server, player_data, &mut player_uuid)
-                    .await?;
+                let player = Player::new(
+                    addr,
+                    packet.name.clone(),
+                    azalea_auth::offline::generate_uuid(&packet.name),
+                    None,
+                );
+                player_lock = Some(utils::signal_login_success(&mut conn, server, player).await?);
                 state = State::PhaseSwitch; // wait for login ack before transitioning
             }
             Ok(ServerboundLoginPacket::Key(_)) => {
@@ -77,11 +81,9 @@ pub async fn try_handle(
                     )
                     .await?;
 
-                    #[rustfmt::skip] // keep it on a single line
-                    player.addr(info.addr.into()).name(info.name).uuid(info.uuid).skin(info.skin);
-                    let player_data = utils::build_player(&mut conn, &player).await?;
-                    utils::signal_login_success(&mut conn, server, player_data, &mut player_uuid)
-                        .await?;
+                    let player = Player::new(info.addr.into(), info.name, info.uuid, info.skin);
+                    player_lock =
+                        Some(utils::signal_login_success(&mut conn, server, player).await?);
                     state = State::PhaseSwitch; // wait for login ack before transitioning
                 }
             }
@@ -99,8 +101,5 @@ pub async fn try_handle(
     }
 
     debug!("Transitioning to configuration phase");
-    Ok((
-        utils::configuration(conn),
-        player_uuid.expect("player uuid not set"),
-    ))
+    Ok((utils::configuration(conn), player_lock.unwrap()))
 }

@@ -9,10 +9,14 @@ use azalea_protocol::{
 use tracing::*;
 
 use crate::{
-    config, internal_error,
-    network::{self, server::AServer, ConfigurationConnection, LoginConnection},
+    config,
+    network::{
+        self,
+        server::{AServer, PlayerRef},
+        ConfigurationConnection, LoginConnection,
+    },
     network_disconnect,
-    player::{Player, PlayerBuilder},
+    player::Player,
     utils::velocity,
 };
 
@@ -72,35 +76,18 @@ pub async fn verify_velocity_forwarding(
 }
 
 #[tracing::instrument(level = "trace", skip_all, err)]
-pub async fn build_player(
+pub async fn signal_login_success<'a>(
     conn: &mut LoginConnection,
-    player: &PlayerBuilder,
-) -> network::Result<Player> {
-    trace!("Attempting to build player data");
-    match player.build() {
-        Ok(player) => Ok(player),
-        Err(err) => {
-            error!("Failed to build player data: {err}");
-            internal_error!(conn, "Failed to build player data")
-        }
-    }
-}
-
-#[tracing::instrument(level = "trace", skip_all, err)]
-pub async fn signal_login_success(
-    conn: &mut LoginConnection,
-    server: &AServer,
+    server: &'a AServer,
     player: Player,
-    uuid: &mut Option<uuid::Uuid>,
-) -> std::io::Result<()> {
+) -> network::Result<PlayerRef<'a>> {
     trace!("Signaling login success to client");
-    *uuid = Some(player.uuid);
-    server.add_player(player.clone());
     conn.write(
         ClientboundGameProfilePacket {
-            game_profile: player.into(),
+            game_profile: player.clone().into(),
         }
         .get(),
     )
-    .await
+    .await?;
+    server.add_player(player)
 }
