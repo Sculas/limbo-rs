@@ -1,13 +1,53 @@
 use std::io::Cursor;
 
-use azalea_buf::McBufReadable;
-use azalea_protocol::connect::Connection;
+use azalea_buf::{McBufReadable, McBufWritable};
+use azalea_core::resource_location::ResourceLocation;
+use azalea_protocol::{
+    connect::Connection,
+    packets::configuration::{
+        clientbound_custom_payload_packet::ClientboundCustomPayloadPacket,
+        clientbound_finish_configuration_packet::ClientboundFinishConfigurationPacket,
+        clientbound_registry_data_packet::ClientboundRegistryDataPacket,
+    },
+};
 use tracing::*;
 
 use crate::{
-    internal_error,
+    config, internal_error,
     network::{self, ConfigurationConnection, GameConnection},
+    utils::registry_data,
 };
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub async fn send_configurations(conn: &mut ConfigurationConnection) -> network::Result<()> {
+    trace!("Sending server brand to client");
+    send_server_brand(conn).await?;
+    trace!("Sending registry data to client");
+    conn.write(
+        ClientboundRegistryDataPacket {
+            registry_holder: registry_data::get(),
+        }
+        .get(),
+    )
+    .await?;
+    trace!("Signaling client to finish configuration");
+    conn.write(ClientboundFinishConfigurationPacket {}.get())
+        .await?;
+    Ok(())
+}
+
+async fn send_server_brand(conn: &mut ConfigurationConnection) -> std::io::Result<()> {
+    let mut data = Vec::new();
+    config::get().brand.write_into(&mut data)?;
+    conn.write(
+        ClientboundCustomPayloadPacket {
+            identifier: ResourceLocation::new("minecraft:brand"),
+            data: data.into(),
+        }
+        .get(),
+    )
+    .await
+}
 
 #[tracing::instrument(level = "trace", skip_all, err)]
 pub async fn read_string(

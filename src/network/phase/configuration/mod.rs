@@ -1,14 +1,9 @@
-use azalea_protocol::packets::configuration::{
-    clientbound_finish_configuration_packet::ClientboundFinishConfigurationPacket,
-    clientbound_registry_data_packet::ClientboundRegistryDataPacket,
-    ServerboundConfigurationPacket,
-};
+use azalea_protocol::packets::configuration::ServerboundConfigurationPacket;
 use tracing::*;
 
 use crate::{
     bail_packet_error,
     network::{self, ext::ConnectionExt},
-    utils::registry_data,
 };
 
 mod utils;
@@ -21,15 +16,8 @@ pub async fn try_handle(
     debug!("Handling configuration phase");
     let mut brand_received = false;
 
-    conn.write(
-        ClientboundRegistryDataPacket {
-            registry_holder: registry_data::get(),
-        }
-        .get(),
-    )
-    .await?;
-    conn.write(ClientboundFinishConfigurationPacket {}.get())
-        .await?;
+    // Send configurations to the client
+    utils::send_configurations(&mut conn).await?;
 
     loop {
         match conn.read_timeout().await {

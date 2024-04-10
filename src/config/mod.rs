@@ -22,6 +22,8 @@ pub struct Config {
     pub motd: String,
     /// Version to display in the server list
     pub version: String,
+    /// Server brand to display in F3 menu
+    pub brand: String,
     /// Whether the limbo is behind Velocity and should use modern velocity forwarding
     pub uses_velocity_modern: bool,
     /// If `uses_velocity_modern` is true, the secret to use for verifying Velocity forwarding
