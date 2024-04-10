@@ -2,14 +2,15 @@ use std::sync::Arc;
 
 use crate::player::Player;
 use anyhow::Context;
-use tokio::{net::TcpListener, sync::RwLock};
+use dashmap::DashMap;
+use tokio::{net::TcpListener, sync::Mutex};
 use tracing::*;
 
 pub type AServer = Arc<Server>;
 
 pub struct Server {
     listener: TcpListener,
-    players: RwLock<Vec<Player>>,
+    players: DashMap<uuid::Uuid, Mutex<Player>>,
 }
 
 impl Server {
@@ -45,13 +46,25 @@ impl Server {
         }
     }
 
-    pub async fn add_player(self: &AServer, player: Player) {
-        let mut players_lock = self.players.write().await;
-        players_lock.push(player);
+    pub fn add_player(self: &AServer, player: Player) {
+        self.players.insert(player.uuid, Mutex::new(player));
     }
 
-    pub async fn get_player_count(self: &AServer) -> usize {
-        let players_lock = self.players.read().await;
-        players_lock.len()
+    pub fn get_player<'a>(
+        self: &'a AServer,
+        uuid: uuid::Uuid,
+    ) -> super::Result<dashmap::mapref::one::Ref<'a, uuid::Uuid, Mutex<Player>>> {
+        match self.players.get(&uuid) {
+            Some(player_ref) => Ok(player_ref),
+            None => crate::network_bail!("Player data not found for UUID {uuid}"),
+        }
+    }
+
+    pub fn remove_player(self: &AServer, uuid: uuid::Uuid) {
+        self.players.remove(&uuid);
+    }
+
+    pub fn get_player_count(self: &AServer) -> usize {
+        self.players.len()
     }
 }

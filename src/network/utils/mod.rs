@@ -3,7 +3,7 @@ pub mod state;
 #[macro_export]
 macro_rules! bail_packet_error {
     ($err:ident, $ctx:expr) => {{
-        return Err($crate::network::ConnectionError::from($err));
+        return Err($err);
     }};
 }
 
@@ -12,7 +12,7 @@ macro_rules! bail_packet_error {
 macro_rules! network_bail {
     ($($reason:tt)+) => {{
         let reason = format!($($reason)+);
-        debug!("Disconnecting client with reason: {}", reason);
+        tracing::warn!("Disconnecting client with reason: {}", reason);
         return Err($crate::network::ConnectionError::Disconnect(reason));
     }};
 }
@@ -35,6 +35,7 @@ macro_rules! network_disconnect {
 macro_rules! internal_error {
     ($conn:ident, $($reason:tt)+) => {{
         let reason = format!($($reason)+);
+        tracing::error!("An internal error occurred: {}", reason);
         $crate::network_disconnect!($conn, "Internal error: {}", reason);
     }};
 }

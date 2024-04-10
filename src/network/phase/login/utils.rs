@@ -86,14 +86,16 @@ pub async fn build_player(
     }
 }
 
-#[tracing::instrument(level = "trace", skip_all, fields(%player), err)]
+#[tracing::instrument(level = "trace", skip_all, err)]
 pub async fn signal_login_success(
     conn: &mut LoginConnection,
     server: &AServer,
     player: Player,
+    uuid: &mut Option<uuid::Uuid>,
 ) -> std::io::Result<()> {
     trace!("Signaling login success to client");
-    server.add_player(player.clone()).await;
+    *uuid = Some(player.uuid);
+    server.add_player(player.clone());
     conn.write(
         ClientboundGameProfilePacket {
             game_profile: player.into(),

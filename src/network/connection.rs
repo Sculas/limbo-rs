@@ -4,13 +4,15 @@ use crate::{
     network::{
         self, phase,
         server::{AServer, Server},
-        HandshakeConnection, NextPhase,
+        ClientIntention, HandshakeConnection,
     },
-    network_bail, player,
+    player,
 };
 
+// TODO: add Player to connection span
+
 impl Server {
-    #[tracing::instrument(name = "connection", skip_all, fields(addr))]
+    #[tracing::instrument(name = "connection", skip_all, fields(addr, player))]
     pub async fn handle_connection(
         self: AServer,
         stream: tokio::net::TcpStream,
@@ -34,15 +36,11 @@ async fn try_handle(
     addr: player::addr::PlayerAddr,
     server: AServer,
 ) -> network::Result<()> {
-    // Handle the handshake and transition to the next phase, if applicable.
-    let mut conn = match phase::handshake::try_handle(&mut conn).await? {
-        NextPhase::Status => return phase::status::try_handle(conn.status(), &server).await,
-        NextPhase::Login => match phase::login::try_handle(conn.login(), addr, &server).await? {
-            // Login phase continues to the next phase; transition to the configuration phase.
-            NextPhase::Configuration(conn) => conn,
-            phase => network_bail!("Unsupported next phase {phase:?} for login phase"),
-        },
-        phase => network_bail!("Unsupported next phase {phase:?} for handshake phase"),
+    // Handle the handshake and transition to the configuration next phase, if applicable.
+    let (conn, player) = match phase::handshake::try_handle(&mut conn).await? {
+        ClientIntention::Status => return phase::status::try_handle(conn.status(), &server).await,
+        ClientIntention::Login => phase::login::try_handle(conn.login(), addr, &server).await?,
     };
+    let conn = phase::configuration::try_handle(conn).await?;
     Ok(())
 }

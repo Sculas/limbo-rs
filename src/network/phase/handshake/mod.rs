@@ -2,7 +2,7 @@ use azalea_protocol::packets::ConnectionProtocol;
 use tracing::*;
 
 use crate::{
-    network::{self, NextPhase},
+    network::{self, ClientIntention},
     network_bail,
 };
 
@@ -10,7 +10,9 @@ mod utils;
 
 /// Attempts to handle an incoming handshake.
 #[tracing::instrument(name = "handshake", skip_all)]
-pub async fn try_handle(conn: &mut network::HandshakeConnection) -> network::Result<NextPhase> {
+pub async fn try_handle(
+    conn: &mut network::HandshakeConnection,
+) -> network::Result<ClientIntention> {
     debug!("Handling incoming handshake");
 
     // Handle legacy ping (<=1.6)
@@ -36,8 +38,8 @@ pub async fn try_handle(conn: &mut network::HandshakeConnection) -> network::Res
     let intent = utils::read_intent(conn).await?;
     debug!(version = intent.protocol_version, host = intent.hostname, port = intent.port, intention = ?intent.intention, "Received client intention");
     match intent.intention {
-        ConnectionProtocol::Status => Ok(NextPhase::Status),
-        ConnectionProtocol::Login => Ok(NextPhase::Login),
+        ConnectionProtocol::Status => Ok(ClientIntention::Status),
+        ConnectionProtocol::Login => Ok(ClientIntention::Login),
         intention => {
             warn!(intention = ?intention, phase = "handshake", "Unsupported client intention at current phase");
             network_bail!("Unsupported client intention");

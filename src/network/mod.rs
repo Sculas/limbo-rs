@@ -36,30 +36,41 @@ pub type Result<T> = std::result::Result<T, ConnectionError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectionError {
+    // server imposed disconnect
     #[error("client disconnected: {0}")]
     Disconnect(String),
-    #[error("error while reading packet: {0}")]
-    ReadPacket(#[from] Box<azalea_protocol::read::ReadPacketError>),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("read timeout while reading packet: {0}")]
+    #[error("error while reading packet: {0}")]
+    ReadPacket(#[from] Box<azalea_protocol::read::ReadPacketError>),
+    #[error("read timeout while reading packet")]
     ReadTimeout(#[from] tokio::time::error::Elapsed),
 }
 
-pub enum NextPhase {
-    Status,
-    Login,
-    Configuration(ConfigurationConnection),
-    Game,
+impl ConnectionError {
+    /// Returns `true` if the connection was closed by the client.
+    /// Returns `false` otherwise.
+    pub fn connection_closed(&self) -> bool {
+        match self {
+            ConnectionError::ReadPacket(err) => matches!(
+                **err,
+                azalea_protocol::read::ReadPacketError::ConnectionClosed
+            ),
+            _ => false,
+        }
+    }
 }
 
-impl std::fmt::Debug for NextPhase {
+pub enum ClientIntention {
+    Status,
+    Login,
+}
+
+impl std::fmt::Debug for ClientIntention {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            NextPhase::Status => write!(f, "Status"),
-            NextPhase::Login => write!(f, "Login"),
-            NextPhase::Configuration(_) => write!(f, "Configuration"),
-            NextPhase::Game => write!(f, "Game"),
+            ClientIntention::Status => write!(f, "Status"),
+            ClientIntention::Login => write!(f, "Login"),
         }
     }
 }

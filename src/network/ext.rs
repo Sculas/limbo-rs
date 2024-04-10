@@ -8,20 +8,13 @@ use azalea_protocol::{
         login::clientbound_login_disconnect_packet::ClientboundLoginDisconnectPacket,
         ProtocolPacket,
     },
-    read::ReadPacketError,
 };
 use tokio::io::AsyncWriteExt;
 use tracing::*;
 
-use super::{ConfigurationConnection, GameConnection, LoginConnection};
+use super::{ConfigurationConnection, GameConnection, LoginConnection, Result};
 
 pub static mut READ_TIMEOUT: Duration = Duration::from_secs(5);
-
-fn map_timeout(_: tokio::time::error::Elapsed) -> Box<ReadPacketError> {
-    Box::new(ReadPacketError::IoError {
-        source: std::io::Error::new(std::io::ErrorKind::TimedOut, "Read timed out"),
-    })
-}
 
 #[macro_export]
 macro_rules! timeout {
@@ -32,7 +25,7 @@ macro_rules! timeout {
 
 pub trait ConnectionExt<R, W> {
     /// Read a packet from the other side of the connection with a timeout.
-    async fn read_timeout(&mut self) -> Result<R, Box<ReadPacketError>>;
+    async fn read_timeout(&mut self) -> Result<R>;
     /// Write a packet to the other side of the connection.
     async fn write_raw(&mut self, data: &[u8]) -> std::io::Result<()>;
 }
@@ -42,10 +35,8 @@ where
     R: ProtocolPacket + Debug,
     W: ProtocolPacket + Debug,
 {
-    async fn read_timeout(&mut self) -> Result<R, Box<ReadPacketError>> {
-        tokio::time::timeout(unsafe { READ_TIMEOUT }, self.read())
-            .await
-            .map_err(map_timeout)?
+    async fn read_timeout(&mut self) -> Result<R> {
+        Ok(tokio::time::timeout(unsafe { READ_TIMEOUT }, self.read()).await??)
     }
 
     async fn write_raw(&mut self, data: &[u8]) -> std::io::Result<()> {

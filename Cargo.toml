@@ -17,6 +17,7 @@ azalea-core = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-auth = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-protocol = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-buf = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
+simdnbt = { git = "https://github.com/azalea-rs/simdnbt", version = "0.4" }
 clap = { version = "4.5.3", features = ["derive"] }
 futures = "0.3.30"
 once_cell = "1.19.0"
@@ -28,6 +29,6 @@ uuid = "1.8.0"
 figment = { version = "0.10", features = ["toml"] }
 serde = "1.0"
 rand = "0.8.5"
-parking_lot = "0.12"
 hmac-sha256 = "1.1.7"
 thiserror = "1.0"
+dashmap = "5.5.3"

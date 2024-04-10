@@ -1,4 +1,4 @@
-use azalea_protocol::{packets::status::ServerboundStatusPacket, read::ReadPacketError};
+use azalea_protocol::packets::status::ServerboundStatusPacket;
 use tracing::*;
 
 use crate::{
@@ -20,7 +20,7 @@ pub async fn try_handle(
     loop {
         match conn.read_timeout().await {
             Ok(ServerboundStatusPacket::StatusRequest(_)) => {
-                let player_count = server.get_player_count().await;
+                let player_count = server.get_player_count();
                 utils::respond_status_ping(
                     &mut conn,
                     &config.version,
@@ -37,7 +37,7 @@ pub async fn try_handle(
             }
             // The client may disconnect after StatusResponse (while we're still waiting for PingRequest),
             // so we should just break out of the loop and close the connection in that case.
-            Err(err) if matches!(*err, ReadPacketError::ConnectionClosed) => break,
+            Err(err) if err.connection_closed() => break,
             Err(err) => bail_packet_error!(err, "Failed to read status packet"),
         }
     }
