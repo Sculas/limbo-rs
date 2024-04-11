@@ -36,7 +36,7 @@ pub async fn try_handle(
     let mut player_lock = None;
 
     loop {
-        match conn.read_timeout().await {
+        match conn.read_timeout(network::ConnectionPhase::Login).await {
             Ok(ServerboundLoginPacket::Hello(packet)) => {
                 debug!(username = ?packet.name, uuid = ?packet.profile_id, "Received hello from client");
                 validate_state!(conn, state == State::Hello, "Unexpected hello packet");

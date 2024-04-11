@@ -14,7 +14,8 @@ use tracing::*;
 
 use crate::{
     config, internal_error,
-    network::{self, ConfigurationConnection, GameConnection},
+    network::{self, server::PlayerRef, ConfigurationConnection, GameConnection},
+    player::skin,
     utils::registry_data,
 };
 
@@ -59,6 +60,12 @@ pub async fn read_string(
         Ok(s) => Ok(s),
         Err(err) => internal_error!(conn, "Failed to read string from packet data: {err}"),
     }
+}
+
+#[tracing::instrument(level = "trace", skip_all)]
+pub async fn set_skin_layers(player: &PlayerRef<'_>, layers: skin::SkinLayers) {
+    trace!("Setting skin layers for player");
+    player.lock().await.set_skin_layers(layers);
 }
 
 /// Change our state from configuration to game.

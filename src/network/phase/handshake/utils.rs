@@ -17,7 +17,11 @@ const PROTOCOL: i8 = 127;
 pub async fn is_legacy_ping(conn: &mut HandshakeConnection) -> network::Result<bool> {
     trace!("Checking for legacy ping");
     let buf = &mut [0u8; 1];
-    let n = timeout!(conn.reader.raw.read_stream.peek(buf)).await??;
+    let n = timeout!(
+        conn.reader.raw.read_stream.peek(buf),
+        network::ConnectionPhase::Handshake
+    )
+    .await??;
     Ok(n == 1 && buf[0] == 0xFE)
 }
 
@@ -54,7 +58,7 @@ pub async fn respond_legacy_ping(
 #[tracing::instrument(level = "trace", skip(conn), ret, err)]
 pub async fn read_intent(conn: &mut HandshakeConnection) -> network::Result<ClientIntentionPacket> {
     trace!("Reading client intent");
-    match conn.read_timeout().await {
+    match conn.read_timeout(network::ConnectionPhase::Handshake).await {
         Ok(ServerboundHandshakePacket::ClientIntention(packet)) => Ok(packet),
         Err(err) => bail_packet_error!(err, "Failed to read client intention"),
     }

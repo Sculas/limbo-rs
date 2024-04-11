@@ -26,7 +26,7 @@ impl Server {
             Err(network::ConnectionError::Disconnect(reason)) => {
                 debug!("Connection closed: {reason}")
             }
-            Err(err) => error!("Error while handling connection: {err:?}"),
+            Err(err) => error!("Error while handling connection: {err}"),
         }
     }
 }
@@ -37,10 +37,10 @@ async fn try_handle(
     server: AServer,
 ) -> network::Result<()> {
     // Handle the handshake and transition to the configuration next phase, if applicable.
-    let (conn, player) = match phase::handshake::try_handle(&mut conn).await? {
+    let (conn, ref player) = match phase::handshake::try_handle(&mut conn).await? {
         ClientIntention::Status => return phase::status::try_handle(conn.status(), &server).await,
         ClientIntention::Login => phase::login::try_handle(conn.login(), addr, &server).await?,
     };
-    let conn = phase::configuration::try_handle(conn).await?;
-    Ok(())
+    let conn = phase::configuration::try_handle(conn, player).await?;
+    phase::game::try_handle(conn, &server, player).await
 }

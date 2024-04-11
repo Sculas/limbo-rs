@@ -85,6 +85,7 @@ fn find_skin_data(
             return Ok(Some(skin::PlayerSkin {
                 texture: value,
                 signature: maybe_sig.unwrap_or_default(),
+                layers: Default::default(),
             }));
         }
     }

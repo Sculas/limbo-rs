@@ -18,7 +18,7 @@ pub async fn try_handle(
 
     let config = config::get();
     loop {
-        match conn.read_timeout().await {
+        match conn.read_timeout(network::ConnectionPhase::Status).await {
             Ok(ServerboundStatusPacket::StatusRequest(_)) => {
                 let player_count = server.get_player_count();
                 utils::respond_status_ping(

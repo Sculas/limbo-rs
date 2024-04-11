@@ -43,8 +43,8 @@ pub enum ConnectionError {
     Io(#[from] std::io::Error),
     #[error("error while reading packet: {0}")]
     ReadPacket(#[from] Box<azalea_protocol::read::ReadPacketError>),
-    #[error("read timeout while reading packet")]
-    ReadTimeout(#[from] tokio::time::error::Elapsed),
+    #[error("read timeout while reading packet in phase {0:?}")]
+    ReadTimeout(ConnectionPhase),
 }
 
 impl ConnectionError {
@@ -61,16 +61,17 @@ impl ConnectionError {
     }
 }
 
+#[derive(Debug)]
 pub enum ClientIntention {
     Status,
     Login,
 }
 
-impl std::fmt::Debug for ClientIntention {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ClientIntention::Status => write!(f, "Status"),
-            ClientIntention::Login => write!(f, "Login"),
-        }
-    }
+#[derive(Debug)]
+pub enum ConnectionPhase {
+    Handshake,
+    Status,
+    Login,
+    Configuration,
+    Game,
 }

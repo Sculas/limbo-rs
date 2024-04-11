@@ -3,7 +3,7 @@ use tracing::*;
 
 use crate::{
     bail_packet_error,
-    network::{self, ext::ConnectionExt},
+    network::{self, ext::ConnectionExt, server::PlayerRef},
 };
 
 mod utils;
@@ -12,6 +12,7 @@ mod utils;
 #[tracing::instrument(name = "configuration", skip_all)]
 pub async fn try_handle(
     mut conn: network::ConfigurationConnection,
+    player: &PlayerRef<'_>,
 ) -> network::Result<network::GameConnection> {
     debug!("Handling configuration phase");
     let mut brand_received = false;
@@ -20,9 +21,13 @@ pub async fn try_handle(
     utils::send_configurations(&mut conn).await?;
 
     loop {
-        match conn.read_timeout().await {
-            Ok(ServerboundConfigurationPacket::ClientInformation(_)) => {
+        match conn
+            .read_timeout(network::ConnectionPhase::Configuration)
+            .await
+        {
+            Ok(ServerboundConfigurationPacket::ClientInformation(packet)) => {
                 debug!("Received client information from client");
+                utils::set_skin_layers(player, packet.information.model_customization).await;
             }
             Ok(ServerboundConfigurationPacket::CustomPayload(packet)) => {
                 debug!("Received custom payload from client");

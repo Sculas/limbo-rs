@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicU64, Arc};
+use std::sync::{atomic::AtomicU32, Arc};
 
 use crate::player::Player;
 use anyhow::Context;
@@ -6,13 +6,18 @@ use dashmap::DashMap;
 use tokio::{net::TcpListener, sync::Mutex};
 use tracing::*;
 
+pub mod constants {
+    pub const VIEW_DISTANCE: u32 = 8;
+    pub const SIMULATION_DISTANCE: u32 = 8;
+}
+
 pub type AServer = Arc<Server>;
 pub type PlayerRef<'a> = dashmap::mapref::one::Ref<'a, uuid::Uuid, Mutex<Player>>;
 
 pub struct Server {
     listener: TcpListener,
     players: DashMap<uuid::Uuid, Mutex<Player>>,
-    entity_id_counter: AtomicU64,
+    entity_id_counter: AtomicU32,
 }
 
 impl Server {
@@ -70,7 +75,7 @@ impl Server {
         self.players.len()
     }
 
-    pub fn next_entity_id(self: &AServer) -> u64 {
+    pub fn next_entity_id(self: &AServer) -> u32 {
         self.entity_id_counter
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
     }

@@ -16,7 +16,7 @@ pub struct Player {
     skin: Option<skin::PlayerSkin>,
     // Entity Data
     /// The entity ID of the player.
-    entity_id: u64,
+    entity_id: u32,
 }
 
 impl Player {
@@ -60,6 +60,17 @@ impl Player {
     /// Returns the skin of the player.
     pub fn skin(&self) -> Option<&skin::PlayerSkin> {
         self.skin.as_ref()
+    }
+
+    /// Returns the entity ID of the player.
+    pub fn entity_id(&self) -> u32 {
+        self.entity_id
+    }
+
+    pub fn set_skin_layers(&mut self, layers: skin::SkinLayers) {
+        if let Some(skin) = self.skin.as_mut() {
+            skin.layers = layers;
+        }
     }
 }
 

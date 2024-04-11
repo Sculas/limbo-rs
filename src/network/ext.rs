@@ -12,20 +12,23 @@ use azalea_protocol::{
 use tokio::io::AsyncWriteExt;
 use tracing::*;
 
-use super::{ConfigurationConnection, GameConnection, LoginConnection, Result};
+use super::{ConfigurationConnection, ConnectionPhase, GameConnection, LoginConnection, Result};
 
 pub static mut READ_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[macro_export]
 macro_rules! timeout {
-    ($e:expr) => {
-        tokio::time::timeout(unsafe { $crate::network::ext::READ_TIMEOUT }, $e)
+    ($e:expr, $phase:expr) => {
+        futures::TryFutureExt::map_err(
+            tokio::time::timeout(unsafe { $crate::network::ext::READ_TIMEOUT }, $e),
+            |_| $crate::network::ConnectionError::ReadTimeout($phase),
+        )
     };
 }
 
 pub trait ConnectionExt<R, W> {
     /// Read a packet from the other side of the connection with a timeout.
-    async fn read_timeout(&mut self) -> Result<R>;
+    async fn read_timeout(&mut self, phase: ConnectionPhase) -> Result<R>;
     /// Write a packet to the other side of the connection.
     async fn write_raw(&mut self, data: &[u8]) -> std::io::Result<()>;
 }
@@ -35,8 +38,8 @@ where
     R: ProtocolPacket + Debug,
     W: ProtocolPacket + Debug,
 {
-    async fn read_timeout(&mut self) -> Result<R> {
-        Ok(tokio::time::timeout(unsafe { READ_TIMEOUT }, self.read()).await??)
+    async fn read_timeout(&mut self, phase: ConnectionPhase) -> Result<R> {
+        Ok(timeout!(self.read(), phase).await??)
     }
 
     async fn write_raw(&mut self, data: &[u8]) -> std::io::Result<()> {
