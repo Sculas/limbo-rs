@@ -5,7 +5,7 @@ use crate::network::server::AServer;
 pub mod addr;
 pub mod skin;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Player {
     // Player Data
     /// The IP address of the player.
@@ -84,7 +84,13 @@ impl Player {
 
 impl std::fmt::Display for Player {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Player({}; {})", self.name, self.uuid)
+        write!(f, "{}", self.name)
+    }
+}
+
+impl std::fmt::Debug for Player {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Player({} / {})", self.name, self.uuid)
     }
 }
 

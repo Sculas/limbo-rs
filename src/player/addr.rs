@@ -18,11 +18,7 @@ impl std::fmt::Display for PlayerAddr {
 
 impl std::fmt::Debug for PlayerAddr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if *ADDR_WITHHELD {
-            write!(f, "<redacted>")
-        } else {
-            write!(f, "{}", self.0)
-        }
+        write!(f, "{self}")
     }
 }
 

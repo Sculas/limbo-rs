@@ -9,16 +9,14 @@ use crate::{
     player,
 };
 
-// TODO: add Player to connection span
-
 impl Server {
     #[tracing::instrument(name = "connection", skip_all, fields(addr, player))]
     pub async fn handle_connection(
         self: AServer,
         stream: tokio::net::TcpStream,
-        addr: std::net::SocketAddr,
+        socket_addr: std::net::SocketAddr,
     ) {
-        let addr = player::addr::PlayerAddr::from(addr);
+        let addr = player::addr::PlayerAddr::from(socket_addr);
         tracing::Span::current().record("addr", tracing::field::display(addr));
         debug!("Handling incoming connection");
         match try_handle(HandshakeConnection::wrap(stream), addr, self).await {
@@ -41,6 +39,8 @@ async fn try_handle(
         ClientIntention::Status => return phase::status::try_handle(conn.status(), &server).await,
         ClientIntention::Login => phase::login::try_handle(conn.login(), addr, &server).await?,
     };
+    let player_record = format!("{}", player.lock().await);
+    tracing::Span::current().record("player", tracing::field::display(player_record));
     let conn = phase::configuration::try_handle(conn, player).await?;
-    phase::game::try_handle(conn, &server, player).await
+    phase::game::try_handle(conn, &server, player).await // no further phases, we've reached the gameloop
 }

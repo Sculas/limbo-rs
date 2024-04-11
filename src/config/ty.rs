@@ -30,3 +30,9 @@ impl std::ops::Deref for GameMode {
         &self.0
     }
 }
+
+impl AsRef<AGameMode> for GameMode {
+    fn as_ref(&self) -> &AGameMode {
+        &self.0
+    }
+}

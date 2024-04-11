@@ -47,6 +47,7 @@ pub async fn try_handle(
                     continue; // await verification from Velocity
                 }
 
+                // TODO: handle illegal names
                 let player = Player::new(
                     addr,
                     packet.name.clone(),
