@@ -47,13 +47,9 @@ pub async fn try_handle(
                     continue; // await verification from Velocity
                 }
 
-                // TODO: handle illegal names
-                let player = Player::new(
-                    addr,
-                    packet.name.clone(),
-                    azalea_auth::offline::generate_uuid(&packet.name),
-                    None,
-                );
+                utils::validate_player_name(&mut conn, &packet.name).await?;
+                let uuid = azalea_auth::offline::generate_uuid(&packet.name);
+                let player = Player::new(addr, packet.name, uuid, None);
                 player_lock = Some(utils::signal_login_success(&mut conn, server, player).await?);
                 state = State::PhaseSwitch; // wait for login ack before transitioning
             }

@@ -26,6 +26,15 @@ pub fn configuration(conn: LoginConnection) -> ConfigurationConnection {
 }
 
 #[tracing::instrument(level = "trace", skip(conn), err)]
+pub async fn validate_player_name(conn: &mut LoginConnection, name: &str) -> network::Result<()> {
+    trace!("Validating player name");
+    if name.len() > 16 || !name.chars().all(|c| (c as u8) > 32 && (c as u8) < 127) {
+        network_disconnect!(conn, "Invalid characters in username");
+    }
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip(conn), err)]
 pub async fn notify_velocity_forwarding(
     conn: &mut LoginConnection,
     transaction_id: u32,
