@@ -1,12 +1,12 @@
 use tracing::*;
 
 use crate::{
+    config,
     network::{
         self, phase,
         server::{AServer, Server},
         ClientIntention, HandshakeConnection,
     },
-    player,
 };
 
 impl Server {
@@ -14,10 +14,12 @@ impl Server {
     pub async fn handle_connection(
         self: AServer,
         stream: tokio::net::TcpStream,
-        socket_addr: std::net::SocketAddr,
+        addr: std::net::SocketAddr,
     ) {
-        let addr = player::addr::PlayerAddr::from(socket_addr);
-        tracing::Span::current().record("addr", tracing::field::display(addr));
+        if !config::get().hide_player_ips {
+            tracing::Span::current().record("addr", tracing::field::display(addr));
+        }
+
         debug!("Handling incoming connection");
         match try_handle(HandshakeConnection::wrap(stream), addr, self).await {
             Ok(()) => debug!("Connection closed successfully"),
@@ -31,7 +33,7 @@ impl Server {
 
 async fn try_handle(
     mut conn: HandshakeConnection,
-    addr: player::addr::PlayerAddr,
+    addr: std::net::SocketAddr,
     server: AServer,
 ) -> network::Result<()> {
     // Handle the handshake and transition to the configuration next phase, if applicable.

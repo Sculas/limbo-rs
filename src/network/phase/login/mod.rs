@@ -10,7 +10,7 @@ use crate::{
         server::{AServer, PlayerRef},
     },
     network_disconnect, network_state,
-    player::{addr::PlayerAddr, Player},
+    player::Player,
 };
 
 mod utils;
@@ -25,7 +25,7 @@ network_state! { phase => "Login";
 #[tracing::instrument(name = "login", skip_all)]
 pub async fn try_handle(
     mut conn: network::LoginConnection,
-    addr: PlayerAddr,
+    addr: std::net::SocketAddr,
     server: &AServer,
 ) -> network::Result<(network::ConfigurationConnection, PlayerRef)> {
     debug!("Handling login phase");

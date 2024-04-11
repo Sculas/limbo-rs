@@ -2,14 +2,13 @@ use azalea_auth::game_profile::GameProfile;
 
 use crate::network::server::AServer;
 
-pub mod addr;
 pub mod skin;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Player {
     // Player Data
     /// The IP address of the player.
-    addr: addr::PlayerAddr,
+    addr: std::net::SocketAddr,
     /// The username of the player.
     name: String,
     /// The UUID of the player.
@@ -24,7 +23,7 @@ pub struct Player {
 impl Player {
     /// Creates a new player that must be initialized.
     pub fn new(
-        addr: addr::PlayerAddr,
+        addr: std::net::SocketAddr,
         name: String,
         uuid: uuid::Uuid,
         skin: Option<skin::PlayerSkin>,
@@ -45,7 +44,7 @@ impl Player {
     }
 
     /// Returns the IP address of the player.
-    pub fn addr(&self) -> &addr::PlayerAddr {
+    pub fn addr(&self) -> &std::net::SocketAddr {
         &self.addr
     }
 
