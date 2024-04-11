@@ -1,3 +1,5 @@
+use azalea_auth::game_profile::GameProfile;
+
 use crate::network::server::AServer;
 
 pub mod addr;
@@ -67,6 +69,12 @@ impl Player {
         self.entity_id
     }
 
+    /// Returns a clone of the player's game profile (including skin data).
+    pub fn to_game_profile(&self) -> GameProfile {
+        self.clone().into()
+    }
+
+    /// Sets the visible layers of the player's skin.
     pub fn set_skin_layers(&mut self, layers: skin::SkinLayers) {
         if let Some(skin) = self.skin.as_mut() {
             skin.layers = layers;
@@ -80,7 +88,7 @@ impl std::fmt::Display for Player {
     }
 }
 
-impl From<Player> for azalea_auth::game_profile::GameProfile {
+impl From<Player> for GameProfile {
     fn from(player: Player) -> Self {
         let mut p = azalea_auth::game_profile::GameProfile::new(player.uuid, player.name);
         if let Some(skin) = player.skin {

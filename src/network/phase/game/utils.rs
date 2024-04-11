@@ -3,7 +3,13 @@ use azalea_core::{
     resource_location::ResourceLocation,
 };
 use azalea_protocol::packets::{
-    common::CommonPlayerSpawnInfo, game::clientbound_login_packet::ClientboundLoginPacket,
+    common::CommonPlayerSpawnInfo,
+    game::{
+        clientbound_login_packet::ClientboundLoginPacket,
+        clientbound_player_info_update_packet::{
+            ActionEnumSet, ClientboundPlayerInfoUpdatePacket, PlayerInfoEntry,
+        },
+    },
 };
 use tracing::*;
 
@@ -40,13 +46,46 @@ pub async fn signal_game_start(
                 dimension_type: ResourceLocation::new("minecraft:overworld"),
                 dimension: ResourceLocation::new("minecraft:world"),
                 seed: 0,
-                game_type: GameMode::Adventure,
+                game_type: GameMode::Adventure, // todo
                 previous_game_type: OptionalGameType(None),
                 is_debug: false,
                 is_flat: true,
                 last_death_location: None,
                 portal_cooldown: 0,
             },
+        }
+        .get(),
+    )
+    .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub async fn signal_player_update(
+    conn: &mut GameConnection,
+    server: &AServer,
+    player: &PlayerRef,
+) -> network::Result<()> {
+    trace!("Signaling player update to client");
+    let profile = player.lock().await.to_game_profile();
+    conn.write(
+        ClientboundPlayerInfoUpdatePacket {
+            actions: ActionEnumSet {
+                add_player: true,
+                initialize_chat: false,
+                update_game_mode: true,
+                update_listed: true,
+                update_latency: true,
+                update_display_name: true,
+            },
+            entries: vec![PlayerInfoEntry {
+                profile,
+                listed: true,
+                latency: 0,                     // todo?
+                game_mode: GameMode::Adventure, // todo
+                display_name: None,
+                chat_session: None,
+            }],
         }
         .get(),
     )

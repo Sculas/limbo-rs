@@ -23,6 +23,8 @@ pub async fn try_handle(
 
     // Signal game start to the client
     utils::signal_game_start(&mut conn, server, &player).await?;
+    // Signal player update to the client
+    utils::signal_player_update(&mut conn, server, &player).await?;
 
     loop {
         match conn.read_timeout(network::ConnectionPhase::Game).await {
