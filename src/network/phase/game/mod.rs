@@ -1,4 +1,6 @@
-use azalea_protocol::packets::game::ServerboundGamePacket;
+use azalea_protocol::packets::game::{
+    clientbound_game_event_packet::EventType, ServerboundGamePacket,
+};
 use tracing::*;
 
 use crate::{
@@ -24,7 +26,9 @@ pub async fn try_handle(
     // Signal game start to the client
     utils::signal_game_start(&mut conn, server, &player).await?;
     // Signal player update to the client
-    utils::signal_player_update(&mut conn, server, &player).await?;
+    utils::signal_player_update(&mut conn, &player).await?;
+    // Signal client to wait for level chunks
+    utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
 
     loop {
         match conn.read_timeout(network::ConnectionPhase::Game).await {
