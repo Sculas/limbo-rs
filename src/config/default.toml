@@ -20,3 +20,5 @@ hide_player_ips = false
 default_gamemode = "adventure"
 # Whether the player is allowed to fly
 allow_flight = false
+# Where the player should spawn
+spawn_location = { x = 0.0, y = 64.0, z = 0.0, yaw = 0.0, pitch = 0.0 }

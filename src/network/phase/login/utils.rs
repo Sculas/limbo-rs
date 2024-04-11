@@ -93,7 +93,7 @@ pub async fn signal_login_success(
     trace!("Signaling login success to client");
     conn.write(
         ClientboundGameProfilePacket {
-            game_profile: player.clone().into(),
+            game_profile: player.game_profile(),
         }
         .get(),
     )

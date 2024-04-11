@@ -4,7 +4,6 @@ use crate::network::server::AServer;
 
 pub mod skin;
 
-#[derive(Clone, PartialEq, Eq)]
 pub struct Player {
     // Player Data
     /// The IP address of the player.
@@ -69,8 +68,18 @@ impl Player {
     }
 
     /// Returns a clone of the player's game profile (including skin data).
-    pub fn to_game_profile(&self) -> GameProfile {
-        self.clone().into()
+    pub fn game_profile(&self) -> GameProfile {
+        let mut profile = azalea_auth::game_profile::GameProfile::new(self.uuid, self.name.clone());
+        if let Some(skin) = self.skin.clone() {
+            profile.properties.insert(
+                skin::TEXTURE_KEY.into(),
+                azalea_auth::game_profile::ProfilePropertyValue {
+                    value: skin.texture,
+                    signature: Some(skin.signature),
+                },
+            );
+        }
+        profile
     }
 
     /// Sets the visible layers of the player's skin.
@@ -90,21 +99,5 @@ impl std::fmt::Display for Player {
 impl std::fmt::Debug for Player {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Player({} / {})", self.name, self.uuid)
-    }
-}
-
-impl From<Player> for GameProfile {
-    fn from(player: Player) -> Self {
-        let mut p = azalea_auth::game_profile::GameProfile::new(player.uuid, player.name);
-        if let Some(skin) = player.skin {
-            p.properties.insert(
-                skin::TEXTURE_KEY.into(),
-                azalea_auth::game_profile::ProfilePropertyValue {
-                    value: skin.texture,
-                    signature: Some(skin.signature),
-                },
-            );
-        }
-        p
     }
 }

@@ -13,6 +13,8 @@ use azalea_protocol::packets::{
         clientbound_player_info_update_packet::{
             ActionEnumSet, ClientboundPlayerInfoUpdatePacket, PlayerInfoEntry,
         },
+        clientbound_player_position_packet::ClientboundPlayerPositionPacket,
+        clientbound_set_default_spawn_position_packet::ClientboundSetDefaultSpawnPositionPacket,
     },
 };
 use tracing::*;
@@ -72,7 +74,7 @@ pub async fn signal_player_update(
 ) -> network::Result<()> {
     trace!("Signaling player update to client");
     let config = config::get();
-    let profile = player.lock().await.to_game_profile();
+    let profile = player.lock().await.game_profile();
     conn.write(
         ClientboundPlayerInfoUpdatePacket {
             actions: ActionEnumSet {
@@ -131,6 +133,21 @@ pub async fn signal_game_state_change(
         ClientboundGameEventPacket {
             event,
             param: param.unwrap_or_default(),
+        }
+        .get(),
+    )
+    .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub async fn signal_spawn_position(conn: &mut GameConnection) -> network::Result<()> {
+    trace!("Signaling spawn position to client");
+    let pos = config::get().spawn_location;
+    conn.write(
+        ClientboundSetDefaultSpawnPositionPacket {
+            pos: pos.to_block_pos(),
+            angle: pos.yaw(),
         }
         .get(),
     )

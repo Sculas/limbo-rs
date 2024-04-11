@@ -23,10 +23,14 @@ pub async fn try_handle(
 ) -> network::Result<()> {
     debug!("Handling game phase");
 
+    // Initialize the player entity
+    player.lock().await.init(server);
     // Signal game start to the client
     utils::signal_game_start(&mut conn, server, &player).await?;
     // Signal player update to the client
     utils::signal_player_update(&mut conn, &player).await?;
+    // Signal spawn position to the client
+    utils::signal_spawn_position(&mut conn).await?;
     // Signal client to wait for level chunks
     utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
 

@@ -36,6 +36,8 @@ pub struct Config {
     pub default_gamemode: ty::GameMode,
     /// Whether the player is allowed to fly
     pub allow_flight: bool,
+    /// Where the player should spawn
+    pub spawn_location: ty::Location,
 }
 
 impl Config {
