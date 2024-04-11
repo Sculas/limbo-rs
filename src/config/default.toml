@@ -16,6 +16,8 @@ uses_velocity_modern = false
 velocity_forwarding_secret = "<secret>"
 # Whether the player's IP address should be withheld in the console
 hide_player_ips = false
+# Whether the player's client brand should be logged in the console
+log_client_brand = true
 # The default gamemode for joining players
 default_gamemode = "adventure"
 # Whether the player is allowed to fly

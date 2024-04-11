@@ -37,7 +37,7 @@ impl Player {
     }
 
     /// Initializes the player.
-    /// Must be called once the player enters the PLAY phase.
+    /// Must be called once the player enters the game phase.
     pub fn init(&mut self, server: &AServer) {
         self.entity_id = server.next_entity_id();
     }

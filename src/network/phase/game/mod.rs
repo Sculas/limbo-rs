@@ -4,7 +4,7 @@ use azalea_protocol::packets::game::{
 use tracing::*;
 
 use crate::{
-    bail_packet_error,
+    bail_packet_error, config,
     network::{
         self,
         ext::ConnectionExt,
@@ -31,6 +31,8 @@ pub async fn try_handle(
     utils::signal_player_update(&mut conn, &player).await?;
     // Signal spawn position to the client
     utils::signal_spawn_position(&mut conn).await?;
+    // Teleport the player to the spawn location
+    utils::teleport_player(&mut conn, config::get().spawn_location).await?;
     // Signal client to wait for level chunks
     utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
 

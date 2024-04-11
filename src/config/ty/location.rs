@@ -61,3 +61,13 @@ impl Location {
         }
     }
 }
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(x={}, y={}, z={}, yaw={}, pitch={})",
+            self.x, self.y, self.z, self.yaw, self.pitch
+        )
+    }
+}

@@ -2,7 +2,7 @@ use azalea_protocol::packets::configuration::ServerboundConfigurationPacket;
 use tracing::*;
 
 use crate::{
-    bail_packet_error,
+    bail_packet_error, config,
     network::{self, ext::ConnectionExt, server::PlayerRef},
 };
 
@@ -15,7 +15,9 @@ pub async fn try_handle(
     player: &PlayerRef,
 ) -> network::Result<network::GameConnection> {
     debug!("Handling configuration phase");
-    let mut brand_received = false;
+
+    // If we don't want to log the client brand anyway, just ignore it
+    let mut brand_received = !config::get().log_client_brand;
 
     // Send configurations to the client
     utils::send_configurations(&mut conn).await?;

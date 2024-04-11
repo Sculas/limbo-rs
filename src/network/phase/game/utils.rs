@@ -13,14 +13,14 @@ use azalea_protocol::packets::{
         clientbound_player_info_update_packet::{
             ActionEnumSet, ClientboundPlayerInfoUpdatePacket, PlayerInfoEntry,
         },
-        clientbound_player_position_packet::ClientboundPlayerPositionPacket,
+        clientbound_player_position_packet::{ClientboundPlayerPositionPacket, RelativeMovements},
         clientbound_set_default_spawn_position_packet::ClientboundSetDefaultSpawnPositionPacket,
     },
 };
 use tracing::*;
 
 use crate::{
-    config,
+    config::{self, ty::Location},
     network::{
         self,
         server::{constants, AServer, PlayerRef},
@@ -148,6 +148,31 @@ pub async fn signal_spawn_position(conn: &mut GameConnection) -> network::Result
         ClientboundSetDefaultSpawnPositionPacket {
             pos: pos.to_block_pos(),
             angle: pos.yaw(),
+        }
+        .get(),
+    )
+    .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip(conn), fields(%location), err)]
+pub async fn teleport_player(conn: &mut GameConnection, location: Location) -> network::Result<()> {
+    trace!("Teleporting player to location");
+    conn.write(
+        ClientboundPlayerPositionPacket {
+            x: location.x(),
+            y: location.y(),
+            z: location.z(),
+            y_rot: location.yaw(),
+            x_rot: location.pitch(),
+            relative_arguments: RelativeMovements {
+                x: false,
+                y: false,
+                z: false,
+                y_rot: false,
+                x_rot: false,
+            },
+            id: 1,
         }
         .get(),
     )

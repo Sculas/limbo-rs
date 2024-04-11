@@ -32,6 +32,8 @@ pub struct Config {
     pub velocity_forwarding_secret: String,
     /// Whether the player's IP address should be withheld in the console
     pub hide_player_ips: bool,
+    /// Whether the player's client brand should be logged in the console
+    pub log_client_brand: bool,
     /// The default gamemode for joining players
     pub default_gamemode: ty::GameMode,
     /// Whether the player is allowed to fly
