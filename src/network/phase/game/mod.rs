@@ -30,6 +30,9 @@ pub async fn try_handle(
     // Signal client to wait for level chunks
     utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
 
+    // Player has fully joined the game at this point
+    info!("Player has joined the game");
+
     loop {
         match conn.read_timeout(network::ConnectionPhase::Game).await {
             Ok(ServerboundGamePacket::Pong(_)) => {
