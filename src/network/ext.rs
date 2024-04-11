@@ -14,7 +14,7 @@ use tracing::*;
 
 use super::{ConfigurationConnection, ConnectionPhase, GameConnection, LoginConnection, Result};
 
-pub static mut READ_TIMEOUT: Duration = Duration::from_secs(5);
+pub static mut READ_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[macro_export]
 macro_rules! timeout {
