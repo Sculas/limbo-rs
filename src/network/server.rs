@@ -12,11 +12,11 @@ pub mod constants {
 }
 
 pub type AServer = Arc<Server>;
-pub type PlayerRef<'a> = dashmap::mapref::one::Ref<'a, uuid::Uuid, Mutex<Player>>;
+pub type PlayerRef = Arc<Mutex<Player>>;
 
 pub struct Server {
     listener: TcpListener,
-    players: DashMap<uuid::Uuid, Mutex<Player>>,
+    players: DashMap<uuid::Uuid, Arc<Mutex<Player>>>,
     entity_id_counter: AtomicU32,
 }
 
@@ -54,15 +54,15 @@ impl Server {
         }
     }
 
-    pub fn add_player<'a>(self: &'a AServer, player: Player) -> super::Result<PlayerRef<'a>> {
+    pub fn add_player(self: &AServer, player: Player) -> super::Result<PlayerRef> {
         let uuid = player.uuid();
-        self.players.insert(uuid, Mutex::new(player));
+        self.players.insert(uuid, Arc::new(Mutex::new(player)));
         self.get_player(&uuid)
     }
 
-    pub fn get_player<'a>(self: &'a AServer, uuid: &uuid::Uuid) -> super::Result<PlayerRef<'a>> {
+    pub fn get_player(self: &AServer, uuid: &uuid::Uuid) -> super::Result<PlayerRef> {
         match self.players.get(uuid) {
-            Some(player_ref) => Ok(player_ref),
+            Some(player_ref) => Ok(Arc::clone(&player_ref)),
             None => crate::network_bail!("Player data not found for UUID {uuid}"),
         }
     }

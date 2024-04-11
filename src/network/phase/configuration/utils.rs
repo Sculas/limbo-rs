@@ -63,7 +63,7 @@ pub async fn read_string(
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
-pub async fn set_skin_layers(player: &PlayerRef<'_>, layers: skin::SkinLayers) {
+pub async fn set_skin_layers(player: &PlayerRef, layers: skin::SkinLayers) {
     trace!("Setting skin layers for player");
     player.lock().await.set_skin_layers(layers);
 }

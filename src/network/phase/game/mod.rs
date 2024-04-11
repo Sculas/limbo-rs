@@ -17,7 +17,7 @@ mod utils;
 pub async fn try_handle(
     mut conn: network::GameConnection,
     server: &AServer,
-    player: &PlayerRef<'_>,
+    player: &PlayerRef,
 ) -> network::Result<()> {
     debug!("Handling game phase");
 

@@ -20,7 +20,7 @@ use crate::{
 pub async fn signal_game_start(
     conn: &mut GameConnection,
     server: &AServer,
-    player: &PlayerRef<'_>,
+    player: &PlayerRef,
 ) -> network::Result<()> {
     trace!("Signaling game start to client");
     let player_id = player.lock().await.entity_id();

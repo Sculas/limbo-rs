@@ -12,7 +12,7 @@ mod utils;
 #[tracing::instrument(name = "configuration", skip_all)]
 pub async fn try_handle(
     mut conn: network::ConfigurationConnection,
-    player: &PlayerRef<'_>,
+    player: &PlayerRef,
 ) -> network::Result<network::GameConnection> {
     debug!("Handling configuration phase");
     let mut brand_received = false;

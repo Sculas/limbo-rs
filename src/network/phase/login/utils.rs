@@ -76,11 +76,11 @@ pub async fn verify_velocity_forwarding(
 }
 
 #[tracing::instrument(level = "trace", skip_all, err)]
-pub async fn signal_login_success<'a>(
+pub async fn signal_login_success(
     conn: &mut LoginConnection,
-    server: &'a AServer,
+    server: &AServer,
     player: Player,
-) -> network::Result<PlayerRef<'a>> {
+) -> network::Result<PlayerRef> {
     trace!("Signaling login success to client");
     conn.write(
         ClientboundGameProfilePacket {
