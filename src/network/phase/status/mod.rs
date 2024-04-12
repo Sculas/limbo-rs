@@ -25,7 +25,7 @@ pub async fn try_handle(
                     &mut conn,
                     &config.version,
                     &config.motd,
-                    player_count as i32,
+                    player_count,
                     config.max_players,
                 )
                 .await?

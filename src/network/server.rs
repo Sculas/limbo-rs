@@ -1,6 +1,6 @@
 use std::sync::{atomic::AtomicU32, Arc};
 
-use crate::player::Player;
+use crate::{config, player::Player};
 use anyhow::Context;
 use dashmap::DashMap;
 use tokio::{net::TcpListener, sync::Mutex};
@@ -71,8 +71,13 @@ impl Server {
         self.players.remove(&uuid);
     }
 
-    pub fn get_player_count(self: &AServer) -> usize {
-        self.players.len()
+    /// Current player count, returned as an i32 (for protocol compatibility)
+    pub fn get_player_count(self: &AServer) -> i32 {
+        self.players.len() as i32
+    }
+
+    pub fn is_full(self: &AServer) -> bool {
+        self.get_player_count() >= config::get().max_players
     }
 
     pub fn next_entity_id(self: &AServer) -> u32 {

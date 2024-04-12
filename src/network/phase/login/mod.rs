@@ -41,6 +41,11 @@ pub async fn try_handle(
                 debug!(username = ?packet.name, uuid = ?packet.profile_id, "Received hello from client");
                 validate_state!(conn, state == State::Hello, "Unexpected hello packet");
 
+                if server.is_full() {
+                    // Disconnect the client if the server is full
+                    network_disconnect!(&mut conn, "Server is full!");
+                }
+
                 if config.uses_velocity_modern {
                     utils::notify_velocity_forwarding(&mut conn, transaction_id).await?;
                     state = State::QueryAnswer;
