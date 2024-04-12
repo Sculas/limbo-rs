@@ -33,8 +33,14 @@ pub async fn try_handle(
     utils::signal_spawn_position(&mut conn).await?;
     // Teleport the player to the spawn location
     utils::teleport_player(&mut conn, config::get().spawn_location).await?;
+    // Signal player skin layers to the client
+    utils::signal_player_skin_layers(&mut conn, &player).await?;
     // Signal client to wait for level chunks
     utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
+
+    // TODO: send chunks
+    // TODO: keepalive
+    // TODO: ...profit?
 
     // Player has fully joined the game at this point
     info!("Player has joined the game");

@@ -2,6 +2,7 @@ use azalea_core::{
     game_type::{GameMode, OptionalGameType},
     resource_location::ResourceLocation,
 };
+use azalea_entity::{EntityDataItem, EntityDataValue, EntityMetadataItems};
 use azalea_protocol::packets::{
     common::CommonPlayerSpawnInfo,
     game::{
@@ -15,6 +16,7 @@ use azalea_protocol::packets::{
         },
         clientbound_player_position_packet::{ClientboundPlayerPositionPacket, RelativeMovements},
         clientbound_set_default_spawn_position_packet::ClientboundSetDefaultSpawnPositionPacket,
+        clientbound_set_entity_data_packet::ClientboundSetEntityDataPacket,
     },
 };
 use tracing::*;
@@ -26,6 +28,7 @@ use crate::{
         server::{constants, AServer, PlayerRef},
         GameConnection,
     },
+    player::skin::SkinLayersExt,
 };
 
 #[tracing::instrument(level = "trace", skip_all, err)]
@@ -177,5 +180,30 @@ pub async fn teleport_player(conn: &mut GameConnection, location: Location) -> n
         .get(),
     )
     .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub async fn signal_player_skin_layers(
+    conn: &mut GameConnection,
+    player: &PlayerRef,
+) -> network::Result<()> {
+    trace!("Signaling player skin layers to client");
+    let player = player.lock().await;
+    if let Some(skin) = player.skin() {
+        conn.write(
+            ClientboundSetEntityDataPacket {
+                id: player.entity_id(),
+                packed_items: EntityMetadataItems::new(vec![EntityDataItem {
+                    index: 17, // https://wiki.vg/Entity_metadata#Player
+                    value: EntityDataValue::Byte(skin.layers.to_bits()),
+                }]),
+            }
+            .get(),
+        )
+        .await?;
+    } else {
+        trace!("Player has no skin to send");
+    }
     Ok(())
 }

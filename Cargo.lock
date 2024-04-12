@@ -1378,6 +1378,7 @@ dependencies = [
  "azalea-auth",
  "azalea-buf",
  "azalea-core",
+ "azalea-entity",
  "azalea-protocol",
  "clap",
  "dashmap",

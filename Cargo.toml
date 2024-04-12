@@ -17,6 +17,7 @@ azalea-core = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-auth = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-protocol = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 azalea-buf = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
+azalea-entity = { git = "https://github.com/azalea-rs/azalea", version = "0.9.0" }
 simdnbt = { git = "https://github.com/azalea-rs/simdnbt", version = "0.4" }
 clap = { version = "4.5.3", features = ["derive"] }
 futures = "0.3.30"
