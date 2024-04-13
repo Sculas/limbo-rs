@@ -1386,7 +1386,6 @@ dependencies = [
  "figment",
  "futures",
  "hmac-sha256",
- "once_cell",
  "rand",
  "serde",
  "simdnbt",
