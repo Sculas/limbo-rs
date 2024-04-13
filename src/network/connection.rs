@@ -5,7 +5,7 @@ use crate::{
     network::{
         self, phase,
         server::{AServer, Server},
-        ClientIntention, HandshakeConnection,
+        ClientIntention, ConnectionError, HandshakeConnection,
     },
 };
 
@@ -22,11 +22,12 @@ impl Server {
 
         debug!("Handling incoming connection");
         match try_handle(HandshakeConnection::wrap(stream), addr, self).await {
-            Ok(()) => debug!("Connection closed successfully"),
-            Err(network::ConnectionError::Disconnect(reason)) => {
-                debug!("Connection closed: {reason}")
-            }
-            Err(err) => error!("Error while handling connection: {err}"),
+            Ok(()) => debug!("Connection closed by server"),
+            Err(err) => match err {
+                ConnectionError::Disconnect(reason) => debug!("Player disconnected: {reason}"),
+                err if err.connection_closed() => debug!("Connection closed by client"),
+                err => error!("Error while handling connection: {err}"),
+            },
         }
     }
 }
