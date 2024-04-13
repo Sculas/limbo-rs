@@ -1,12 +1,20 @@
+use azalea_buf::McBufWritable;
 use azalea_core::{
     game_type::{GameMode, OptionalGameType},
+    position::ChunkPos,
     resource_location::ResourceLocation,
 };
 use azalea_entity::{EntityDataItem, EntityDataValue, EntityMetadataItems};
 use azalea_protocol::packets::{
     common::CommonPlayerSpawnInfo,
     game::{
+        clientbound_chunk_batch_finished_packet::ClientboundChunkBatchFinishedPacket,
+        clientbound_chunk_batch_start_packet::ClientboundChunkBatchStartPacket,
         clientbound_game_event_packet::{ClientboundGameEventPacket, EventType},
+        clientbound_level_chunk_with_light_packet::{
+            ClientboundLevelChunkPacketData, ClientboundLevelChunkWithLightPacket,
+        },
+        clientbound_light_update_packet::ClientboundLightUpdatePacketData,
         clientbound_login_packet::ClientboundLoginPacket,
         clientbound_player_abilities_packet::{
             ClientboundPlayerAbilitiesPacket, PlayerAbilitiesFlags,
@@ -15,9 +23,15 @@ use azalea_protocol::packets::{
             ActionEnumSet, ClientboundPlayerInfoUpdatePacket, PlayerInfoEntry,
         },
         clientbound_player_position_packet::{ClientboundPlayerPositionPacket, RelativeMovements},
+        clientbound_set_chunk_cache_center_packet::ClientboundSetChunkCacheCenterPacket,
         clientbound_set_default_spawn_position_packet::ClientboundSetDefaultSpawnPositionPacket,
         clientbound_set_entity_data_packet::ClientboundSetEntityDataPacket,
     },
+};
+use azalea_world::Chunk;
+use simdnbt::{
+    owned::{Nbt, NbtCompound, NbtTag},
+    Serialize,
 };
 use tracing::*;
 
@@ -25,7 +39,7 @@ use crate::{
     config::{self, ty::Location},
     network::{
         self,
-        server::{constants, AServer, PlayerRef},
+        server::{constants, PlayerRef},
         GameConnection,
     },
     player::skin::SkinLayersExt,
@@ -34,19 +48,17 @@ use crate::{
 #[tracing::instrument(level = "trace", skip_all, err)]
 pub async fn signal_game_start(
     conn: &mut GameConnection,
-    _server: &AServer, // todo
     player: &PlayerRef,
 ) -> network::Result<()> {
     trace!("Signaling game start to client");
     let config = config::get();
     let player_id = player.lock().await.entity_id();
-    let max_players = config::get().max_players;
     conn.write(
         ClientboundLoginPacket {
             player_id,
             hardcore: false,
-            levels: Vec::new(), // todo
-            max_players,
+            levels: vec![ResourceLocation::new("minecraft:world")],
+            max_players: config.max_players,
             chunk_radius: constants::VIEW_DISTANCE,
             simulation_distance: constants::SIMULATION_DISTANCE,
             reduced_debug_info: !cfg!(debug_assertions),
@@ -205,5 +217,70 @@ pub async fn signal_player_skin_layers(
     } else {
         trace!("Player has no skin to send");
     }
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, err)]
+pub async fn signal_center_chunk(conn: &mut GameConnection) -> network::Result<()> {
+    trace!("Signaling center chunk to client");
+    conn.write(ClientboundSetChunkCacheCenterPacket { x: 0, z: 0 }.get())
+        .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, fields(x = pos.x, z = pos.z), err)]
+pub async fn signal_chunk_update(
+    conn: &mut GameConnection,
+    pos: ChunkPos,
+    chunk: Chunk,
+) -> network::Result<()> {
+    trace!("Signaling chunk update to client");
+    let mut chunk_data = Vec::new();
+    chunk.write_into(&mut chunk_data)?;
+
+    let mut heightmaps = NbtCompound::new();
+    for (kind, heightmap) in chunk.heightmaps {
+        let data = heightmap.data.data.iter().map(|x| *x as i64).collect();
+        heightmaps.insert(format!("{kind}"), NbtTag::LongArray(data));
+    }
+
+    conn.write(
+        ClientboundLevelChunkWithLightPacket {
+            x: pos.x,
+            z: pos.z,
+            chunk_data: ClientboundLevelChunkPacketData {
+                heightmaps: Nbt::Some(heightmaps.to_nbt()),
+                data: chunk_data,
+                block_entities: Vec::new(),
+            },
+            light_data: ClientboundLightUpdatePacketData {
+                sky_y_mask: Default::default(),         // todo
+                block_y_mask: Default::default(),       // todo
+                empty_sky_y_mask: Default::default(),   // todo
+                empty_block_y_mask: Default::default(), // todo
+                sky_updates: Default::default(),        // todo
+                block_updates: Default::default(),      // todo
+            },
+        }
+        .get(),
+    )
+    .await?;
+    Ok(())
+}
+
+#[tracing::instrument(level = "trace", skip_all, fields(len = chunks.len()), err)]
+pub async fn signal_chunk_batch_update(
+    conn: &mut GameConnection,
+    chunks: Vec<(ChunkPos, Chunk)>,
+) -> network::Result<()> {
+    trace!("Signaling chunk batch update to client");
+    let batch_size = chunks.len() as u32;
+    conn.write(ClientboundChunkBatchStartPacket {}.get())
+        .await?;
+    for (pos, chunk) in chunks {
+        signal_chunk_update(conn, pos, chunk).await?;
+    }
+    conn.write(ClientboundChunkBatchFinishedPacket { batch_size }.get())
+        .await?;
     Ok(())
 }

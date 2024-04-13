@@ -25,7 +25,10 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to initialize tracing");
 
     let config = config::Config::load(&args.config_path)?;
-    debug!("Creating server instance");
+    if !config.uses_velocity_modern {
+        // TODO: Fetch player skins from Mojang API
+        warn!("This server is running in offline mode. Skins will not load (yet), and anyone can join with any username.");
+    }
     let server = Server::bind(&config.host, config.port).await?;
     info!("Starting server on {}:{}", config.host, config.port);
     server.listen().await

@@ -1380,6 +1380,7 @@ dependencies = [
  "azalea-core",
  "azalea-entity",
  "azalea-protocol",
+ "azalea-world",
  "clap",
  "dashmap",
  "figment",

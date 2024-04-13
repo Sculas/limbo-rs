@@ -1,6 +1,8 @@
+use azalea_core::position::ChunkPos;
 use azalea_protocol::packets::game::{
     clientbound_game_event_packet::EventType, ServerboundGamePacket,
 };
+use azalea_world::{Chunk, Section};
 use tracing::*;
 
 use crate::{
@@ -26,7 +28,7 @@ pub async fn try_handle(
     // Initialize the player entity
     player.lock().await.init(server);
     // Signal game start to the client
-    utils::signal_game_start(&mut conn, server, &player).await?;
+    utils::signal_game_start(&mut conn, &player).await?;
     // Signal player update to the client
     utils::signal_player_update(&mut conn, &player).await?;
     // Signal spawn position to the client
@@ -37,9 +39,30 @@ pub async fn try_handle(
     utils::signal_player_skin_layers(&mut conn, &player).await?;
     // Signal client to wait for level chunks
     utils::signal_game_state_change(&mut conn, EventType::WaitForLevelChunks, None).await?;
+    // Signal center chunk to the client
+    utils::signal_center_chunk(&mut conn).await?;
 
-    // TODO: send chunks
-    // TODO: keepalive
+    let mut chunks_test = Vec::new();
+    for x in -6..6 {
+        for z in -6..6 {
+            let mut section = Section::default();
+            // plains biome, this should really be documented somewhere
+            section.biomes.palette = azalea_world::palette::Palette::SingleValue(39);
+            chunks_test.push((
+                ChunkPos::new(x, z),
+                Chunk {
+                    sections: vec![section; 24],
+                    heightmaps: Default::default(),
+                },
+            ));
+        }
+    }
+
+    // Signal chunk batch update to the client
+    utils::signal_chunk_batch_update(&mut conn, chunks_test).await?;
+
+    // TODO: send chunks (it works, yay, now load them from the world)
+    // TODO: keepalive (use conn.into_split() and move the writer to a separate task)
     // TODO: ...profit?
 
     // Player has fully joined the game at this point

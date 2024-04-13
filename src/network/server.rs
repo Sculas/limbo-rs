@@ -22,6 +22,8 @@ pub struct Server {
 
 impl Server {
     pub async fn bind(host: &str, port: u16) -> anyhow::Result<AServer> {
+        // Read and initialize registry data
+        crate::utils::registry_data::init()?;
         // Bind to the specified host and port
         let listener = TcpListener::bind((host, port))
             .await
@@ -67,6 +69,7 @@ impl Server {
         }
     }
 
+    // TODO: Remove player on disconnect
     pub fn remove_player(self: &AServer, uuid: uuid::Uuid) {
         self.players.remove(&uuid);
     }

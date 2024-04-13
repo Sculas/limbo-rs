@@ -24,13 +24,9 @@ pub async fn send_configurations(conn: &mut ConfigurationConnection) -> network:
     trace!("Sending server brand to client");
     send_server_brand(conn).await?;
     trace!("Sending registry data to client");
-    conn.write(
-        ClientboundRegistryDataPacket {
-            registry_holder: registry_data::get(),
-        }
-        .get(),
-    )
-    .await?;
+    let registry_holder = registry_data::get();
+    conn.write(ClientboundRegistryDataPacket { registry_holder }.get())
+        .await?;
     trace!("Signaling client to finish configuration");
     conn.write(ClientboundFinishConfigurationPacket {}.get())
         .await?;
