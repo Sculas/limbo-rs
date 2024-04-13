@@ -80,7 +80,8 @@ impl Server {
     }
 
     pub fn is_full(self: &AServer) -> bool {
-        self.get_player_count() >= config::get().max_players
+        let max_players = config::get().max_players;
+        max_players > 0 && self.get_player_count() >= max_players
     }
 
     pub fn next_entity_id(self: &AServer) -> u32 {
